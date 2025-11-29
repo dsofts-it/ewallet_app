@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:ewallet_app/app/app_link.dart';
 import 'package:ewallet_app/models/auth_models.dart';
 import 'package:ewallet_app/services/auth_service.dart';
+import 'package:ewallet_app/services/storage_service.dart';
 import 'package:ewallet_app/ui/themes/theme_breakpoints.dart';
 import 'package:ewallet_app/ui/themes/theme_button.dart';
 import 'package:ewallet_app/ui/themes/theme_spacing.dart';
@@ -53,7 +54,7 @@ class _OtpFormState extends State<OtpForm> {
 
   Future<void> _persistAuth(AuthVerifyResult result) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('authToken', result.token);
+    await StorageService.saveToken(result.token);
     if (payload.mobile.isNotEmpty) {
       await prefs.setString('authMobile', payload.mobile);
     }
@@ -86,7 +87,11 @@ class _OtpFormState extends State<OtpForm> {
       }
 
       await _persistAuth(result);
-      Get.offAllNamed(AppLink.home);
+      if (payload.flow == OtpFlow.signup) {
+        Get.offAllNamed(AppLink.pinSetup);
+      } else {
+        Get.offAllNamed(AppLink.home);
+      }
     } catch (error) {
       final message = error.toString();
       setState(() {

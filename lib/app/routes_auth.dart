@@ -3,6 +3,7 @@ import 'package:ewallet_app/screens/auth/login.dart';
 import 'package:ewallet_app/screens/auth/otp_pin.dart';
 import 'package:ewallet_app/screens/auth/register.dart';
 import 'package:ewallet_app/screens/auth/reset_password.dart';
+import 'package:ewallet_app/screens/auth/pin_setup.dart';
 import 'package:ewallet_app/screens/auth/welcome.dart';
 import 'package:ewallet_app/ui/layouts/general_layout.dart';
 import 'package:get/route_manager.dart';
@@ -25,6 +26,10 @@ final List<GetPage> routesAuth = [
   GetPage(
     name: AppLink.otp,
     page: () => const GeneralLayout(content: OtpPin()),
+  ),
+  GetPage(
+    name: AppLink.pinSetup,
+    page: () => const GeneralLayout(content: PinSetup()),
   ),
   GetPage(
     name: AppLink.resetPassword,

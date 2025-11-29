@@ -1,5 +1,7 @@
 import 'package:ewallet_app/app/app_link.dart';
 import 'package:ewallet_app/constants/app_const.dart';
+import 'package:ewallet_app/models/wallet_summary.dart';
+import 'package:ewallet_app/services/wallet_service.dart';
 import 'package:ewallet_app/ui/themes/theme_breakpoints.dart';
 import 'package:ewallet_app/ui/themes/theme_button.dart';
 import 'package:ewallet_app/utils/expanded_section.dart';
@@ -22,6 +24,48 @@ class WalletBalance extends StatefulWidget {
 class _WalletBalanceState extends State<WalletBalance> {
   bool _isExpanded = false;
   bool _showBalance = true;
+  final WalletService _walletService = WalletService();
+  WalletSummary? _summary;
+  bool _loadingSummary = false;
+  String? _summaryError;
+
+  String get _currencySymbol =>
+      _summary?.currencySymbol ?? userAccount.currencySymbol;
+  String get _currencyCode =>
+      _summary?.currency ?? userAccount.currency;
+  String get _balanceText =>
+      _summary != null ? _summary!.balance.toStringAsFixed(2) : '0.00';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSummary();
+  }
+
+  Future<void> _loadSummary() async {
+    setState(() {
+      _loadingSummary = true;
+      _summaryError = null;
+    });
+    try {
+      final summary = await _walletService.fetchSummary();
+      if (!mounted) return;
+      setState(() {
+        _summary = summary;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _summaryError = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingSummary = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,53 +174,120 @@ class _WalletBalanceState extends State<WalletBalance> {
   }
 
   Widget _buildBalanceCard(BuildContext context) {
-    return Row(crossAxisAlignment: CrossAxisAlignment.center, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      GestureDetector(
-        onTap: () {
-          setState(() {
-            _showBalance = !_showBalance;
-          });
-        },
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          /// TEXT
-          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            Icon(Icons.account_balance_wallet, color: Colors.black, size: 12),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Text('Your Balance', style: ThemeText.caption.copyWith(color: Colors.black, height: 1)),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _showBalance = !_showBalance;
+              });
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(Icons.account_balance_wallet, color: Colors.black, size: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        'Your Balance',
+                        style: ThemeText.caption.copyWith(color: Colors.black, height: 1),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Icon(
+                        _showBalance ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.black,
+                        size: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                _showBalance
+                    ? Row(
+                        children: [
+                          Text(
+                            '$_currencySymbol $_currencyCode',
+                            style: ThemeText.paragraph.copyWith(color: Colors.black),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _balanceText,
+                            style: ThemeText.title2.copyWith(color: Colors.black, height: 0.7),
+                          ),
+                        ],
+                      )
+                    : SizedBox(
+                        height: 20,
+                        child: Center(
+                          child: Text(
+                            'Tap to show balance',
+                            style: ThemeText.paragraphBold.copyWith(color: Colors.black, height: 0.7),
+                          ),
+                        ),
+                      ),
+                if (_summaryError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      _summaryError!,
+                      style: ThemeText.caption.copyWith(color: Colors.redAccent),
+                    ),
+                  )
+                else if (_loadingSummary)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Refreshing...',
+                      style: ThemeText.caption.copyWith(color: Colors.black54),
+                    ),
+                  ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: Icon(_showBalance ? Icons.visibility_off : Icons.visibility, color: Colors.black, size: 12),
-            ),
-          ]),
-          SizedBox(height: 4),
-            
-          /// BALANCE
-          _showBalance ? Row(children: [
-            Text('${userAccount.currencySymbol} ${userAccount.currency}', style: ThemeText.paragraph.copyWith(color: Colors.black)),
-            SizedBox(width: 4,),
-            Text('123.45', style: ThemeText.title2.copyWith(color: Colors.black, height: 0.7)),
-          ]) : SizedBox(
-            height: 20,
-            child: Center(child: Text('Tap to show balance', style: ThemeText.paragraphBold.copyWith(color: Colors.black, height: 0.7))),
           ),
-        ]),
-      ),
-    
-      OutlinedButton(
-        onPressed: () {
-          Get.toNamed(AppLink.topup);
-        },
-        style: ThemeButton.outlinedBlack(),
-        child: Row(
-          children: [
-            Icon(Icons.add, size: 18),
-            Text('Top Up', style: ThemeText.paragraphBold),
-          ],
         ),
-      )
-    ]);
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Refresh balance',
+              onPressed: _loadingSummary ? null : _loadSummary,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                padding: const EdgeInsets.all(6),
+              ),
+              icon: _loadingSummary
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh, color: Colors.black, size: 18),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: () {
+                Get.toNamed(AppLink.topup);
+              },
+              style: ThemeButton.outlinedBlack(),
+              child: Row(
+                children: [
+                  const Icon(Icons.add, size: 18),
+                  Text('Top Up', style: ThemeText.paragraphBold),
+                ],
+              ),
+            ),
+          ],
+        )
+      ],
+    );
   }
 
   Widget _buildButton(BuildContext context, AppMenu menu) {

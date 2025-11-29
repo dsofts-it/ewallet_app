@@ -12,6 +12,7 @@ import 'package:ewallet_app/widgets/home/promo_game_package.dart';
 import 'package:ewallet_app/widgets/home/promo_mobile_credit.dart';
 import 'package:ewallet_app/widgets/home/active_billings.dart';
 import 'package:ewallet_app/widgets/home/promo_slider.dart';
+import 'package:ewallet_app/widgets/home/ico_summary_card.dart';
 import 'package:ewallet_app/widgets/profile/contact_panel.dart';
 import 'package:ewallet_app/widgets/profile/latest_transactions.dart';
 import 'package:flutter/material.dart';
@@ -98,6 +99,7 @@ class _HomeState extends State<Home> {
                 tooltipHorizontalPosition: TooltipHorizontalPosition.CENTER,
                 child: WalletBalance(),
               ),
+              const IcoSummaryCard(),
               OverlayTooltipItem(
                 displayIndex: 1,
                 tooltip: (controller) => Padding(

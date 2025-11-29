@@ -6,6 +6,7 @@ class AppLink {
   static const register = '/register';
   static const otp = '/otp';
   static const resetPassword = '/reset-password';
+  static const pinSetup = '/pin-setup';
 
   // HOME
   static const home = '/';
@@ -107,4 +108,3 @@ class AppLink {
   static const formSample = '/form-sample';
   static const cardCollection = '/card-collection';
 }
-

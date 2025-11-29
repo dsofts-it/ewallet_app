@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ewallet_app/constants/app_config.dart';
 import 'package:ewallet_app/models/auth_models.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,7 +13,7 @@ class AuthException implements Exception {
 }
 
 class AuthService {
-  static const String _baseUrl = 'https://nirv-ico.onrender.com/api';
+  static const String _baseUrl = AppConfig.baseUrl;
   static const Map<String, String> _headers = {
     'Content-Type': 'application/json',
   };
@@ -79,6 +80,25 @@ class AuthService {
 
     final data = _decodeWithCheck(response);
     return _toVerifyResult(data, mobileOverride: mobile);
+  }
+
+  Future<void> setupPin({
+    required String token,
+    required String pin,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$_baseUrl/auth/pin/setup'),
+      headers: {
+        ..._headers,
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'pin': pin}),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final decoded = _decodeBody(response.body);
+      throw AuthException(_extractMessage(decoded));
+    }
   }
 
   Map<String, dynamic> _decodeWithCheck(http.Response response) {

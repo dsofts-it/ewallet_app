@@ -1,6 +1,7 @@
 import 'package:ewallet_app/screens/auth/welcome.dart';
 import 'package:ewallet_app/screens/home.dart';
 import 'package:ewallet_app/screens/intro/intro_screen.dart';
+import 'package:ewallet_app/services/storage_service.dart';
 import 'package:ewallet_app/ui/layouts/general_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +23,7 @@ class _StartScreenState extends State<StartScreen> {
   Future<void> _loadState() async {
     final prefs = await SharedPreferences.getInstance();
     final finishedIntro = prefs.getBool(_key) ?? false;
-    final token = prefs.getString('authToken') ?? '';
+    final token = await StorageService.getToken() ?? prefs.getString('authToken') ?? '';
 
     // If user is already authenticated, skip intro automatically.
     if (token.isNotEmpty && !finishedIntro) {
